@@ -4,7 +4,11 @@ public class Card {
 	
 	private int _value;
 	private int _suit;
-	private boolean _isAce;
+	private Type _type;
+	
+	public enum Type{
+		NUMBER, JACK, QUEEN, KING, ACE;
+	}	
 	
 	public Card(int value, int suit){
 		setValue(value);
@@ -13,9 +17,9 @@ public class Card {
 	
 	public void setValue(int value){
 		if(value == 1){
-			_isAce = true;
+			_type = Type.ACE;
 		} else {
-			_isAce = false;
+			_type = Type.NUMBER;
 		}		
 		_value = value;
 	}
@@ -33,6 +37,16 @@ public class Card {
 	}
 	
 	public boolean isAce(){
-		return _isAce;
+		return (_type == Type.ACE);
+	}
+	
+	public void setAceValue(boolean high){
+		if(isAce()){
+			if(high){
+				_value = 11;
+			} else {
+				_value = 1;
+			}
+		}
 	}
 }
