@@ -6,23 +6,36 @@ import cards.Card;
 public class TestDeck {
 
 	private static Deck d1;
-	
+
 	public static void main(String[] args) {
-		
-		//tests newly generated deck
-		d1 = new Deck();
+		testCountSimulate();
+	}
+	
+	public static void testCountSimulate(){
+		d1 = new Deck(1);
 		Utility.showDeck(d1);
 		System.out.println("---------------------------------------------");
 		
-		//tests shuffle
+		d1.simulateCount(3);
+		Utility.showDeck(d1);
+		System.out.println("---------------------------------------------");
+	}
+
+	public static void testShuffleNGenerate() {
+		// tests newly generated deck
+		d1 = new Deck(2);
+		Utility.showDeck(d1);
+		System.out.println("---------------------------------------------");
+
+		// tests shuffle
 		System.out.println("EVERYDAY I'M SHUFFLING");
 		d1.shuffle();
 		Utility.showDeck(d1);
 		System.out.println("---------------------------------------------");
-		
-		//tests Deal
+
+		// tests Deal
 		System.out.println("Dealing ");
-		Card[] testDealCards = new Card[4]; 
+		Card[] testDealCards = new Card[4];
 		testDealCards[0] = d1.dealCard();
 		testDealCards[1] = d1.dealCard();
 		testDealCards[2] = d1.dealCard();
@@ -37,9 +50,6 @@ public class TestDeck {
 		d1.takeBackCards(testDealCards);
 		System.out.println("Deck");
 		Utility.showDeck(d1);
-		
 	}
-		
-	
 
 }

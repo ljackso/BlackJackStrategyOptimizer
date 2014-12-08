@@ -1,5 +1,7 @@
 package engine;
 
+import java.util.Random;
+
 import player.Player;
 import cards.Card;
 import cards.Deck;
@@ -9,57 +11,101 @@ import cards.Deck;
 
 public class MainGameLoop {
 
-	private static Player _player;
-	private static Player _house;
+	private static final boolean DEBUG = false;
+	private static final int COUNT_RNG = 10;
 
+	// Deck to be used
 	private static Deck _deck;
 
+	// Players info
+	private static Player _player;
+	private static Player _house;
 	private static int _pot;
-	
+
+	// used for card counting and
+	private static double _playerWin;
 	private static int _count;
-	private static int _shuffleOn;
 
 	public static void main(String[] args) {
 
-		_player = new Player(500);
-		_house = new Player(1000);
+		_player = new Player(50000);
+		_house = new Player(100000);
 
-		_deck = new Deck();
+		_deck = new Deck(1);
 		_pot = 0;
-		
-		_count = 0;
-		_shuffleOn = 10;
-		
-		//Game Loop
-		_deck.shuffle();
-		for (int l = 0; l < 100000; l++) {
-						
-			
-			biddingStrategy();
-			
-			intialHandDeal();
 
-			// Place function here that defines strategy after initial draw to
-			// attempt to win hand;
-			playStrategyOne();
-			
-			endHand();
+		double[] countGames = new double[1 + (COUNT_RNG)];
+		double[] countWin = new double[1 + (COUNT_RNG)];
+		double[] countBlackJack = new double[1 + (COUNT_RNG)];
+		double[] countPush = new double[1 + (COUNT_RNG)];
+
+		// Game Loop
+		_deck.shuffle();
+		for (int count = 0; count < (COUNT_RNG + 1); count++) {
+			for (int l = 0; l < 100000; l++) {
+				if(count != 0){
+					_deck.simulateCount(count);				
+				} else {
+					_deck.shuffle();
+				}
+				biddingStrategy();
+				intialHandDeal();
+
+				if (DEBUG) {
+					System.out
+							.println("-----------------------------------------");
+					System.out.println("New Hand");
+					System.out.println("h ||  p");
+					System.out.println(_house.getCardFromHand(0).getValue()
+							+ " || " + _player.getCardFromHand(0).getValue());
+					System.out.println(_house.getCardFromHand(1).getValue()
+							+ " || " + _player.getCardFromHand(1).getValue());
+				}
+
+				basicStrategy(true);
+				houseStrategy(true);
+				endHand();
+
+				int countIndex = count;
+				if (countIndex < (1 + COUNT_RNG) && countIndex > -1) {
+					countGames[countIndex] += 1;
+					if (playerWonHand()) {
+						if (_playerWin == 0.5) {
+							countPush[countIndex] += 1;
+						} else if (_playerWin == 1) {
+							countWin[countIndex] += 1;
+						} else if (_playerWin == 2) {
+							countBlackJack[countIndex] += 1;
+						}
+					}
+				}
+				returnCards();
+			}
 		}
 
+		double wp, pp, bjp, nl, f;
 		System.out.println("-----------------------------------------");
-		System.out.println("TOTALS");
-		System.out.println("house : " + _house.seeReserve());
-		System.out.println("player : " + _player.seeReserve());
+		for (int l = 0; l < countGames.length; l++) {
+			int c = l;
+			bjp = countBlackJack[l] / countGames[l];
+			wp = countWin[l] / countGames[l];
+			pp = countPush[l] / countGames[l];
+			nl = bjp + wp + pp;
+			System.out.println(c + " : " + bjp + " : " + wp + " : " + pp
+					+ " : " + nl);
+			f = (1.5 * (bjp + wp) - (1 - nl)) / 1.5;
+			System.out.println(c + " : " + f);
+		}
 		System.out.println("-----------------------------------------");
 
 	}
-	
-	//This is where we will use count to build bidding stratergies
-	private static void biddingStrategy(){
+
+	// This is where we will use count to build bidding strategies
+	private static void biddingStrategy() {
 		_pot += _player.placeBet(20);
 		_pot += _house.placeBet(20);
-	}	
-	
+	}
+
 	// Same process each time
 	private static void intialHandDeal() {
 
@@ -69,165 +115,255 @@ public class MainGameLoop {
 		_house.hit(_deck.dealCard());
 		_player.hit(_deck.dealCard());
 	}
-	
+
 	// Again is the same process each time
 	private static void endHand() {
-		
-		if(_player.hasAce()){
-			if((_player.getHandValueExcludingAce() + 11) <= 21){
-				for(int l =0; l < _player.handSize(); l ++){
-					if(_player.getCardFromHand(l).isAce()){
-						//true == set value too 11;
+
+		if (_player.hasAce()) {
+			if ((_player.getHandValueExcludingAce() + 11) <= 21) {
+				for (int l = 0; l < _player.handSize(); l++) {
+					if (_player.getCardFromHand(l).isAce()) {
+						// true == set value too 11;
 						_player.getCardFromHand(l).setAceValue(true);
 						break;
 					}
 				}
 			}
 		}
-		
-		if(_house.hasAce()){
-			if((_house.getHandValueExcludingAce() + 11) <= 21){
-				for(int l =0; l < _house.handSize(); l ++){
-					if(_house.getCardFromHand(l).isAce()){
-						//true == set value too 11;
-						_player.getCardFromHand(l).setAceValue(true);
+		if (_house.hasAce()) {
+			if ((_house.getHandValueExcludingAce() + 11) <= 21) {
+				for (int l = 0; l < _house.handSize(); l++) {
+					if (_house.getCardFromHand(l).isAce()) {
+						// true == set value too 11;
+						_house.getCardFromHand(l).setAceValue(true);
 						break;
 					}
 				}
 			}
-		}	
-		
-		if ((_house.getHandValue() >= _player.getHandValue())
-				|| _player.isBust()) {
-			_house.recieveWinnings(_pot);
-			System.out.println("h");
+		}
+
+		if ((_house.getHandValue() > _player.getHandValue() && !_house.isBust())
+				|| _player.isBust()
+				|| (_house.hasBlackJack() && !_player.hasBlackJack())) {
+
+			_playerWin = 0;
+			if (DEBUG) {
+				System.out.println("House Win");
+			}
+		} else if (_player.getHandValue() == _house.getHandValue()) {
+			_playerWin = 0.5;
+			if (DEBUG) {
+				System.out.println("Push");
+			}
+		} else if (_player.hasBlackJack()) {
+			_playerWin = 2;
+			if (DEBUG) {
+				System.out.println("Player BlackJack");
+			}
 		} else {
-			_player.recieveWinnings(_pot);
-			System.out.println("p");
-		}		
-		
-		countCard(_house.getCardFromHand(0));
-		for(int l = 0; l < _player.handSize(); l ++){	
-			countCard(_player.getCardFromHand(l));		
+			_playerWin = 1;
+			if (DEBUG) {
+				System.out.println("Player Win");
+			}
 		}
-		
+	}
+
+	private static void returnCards() {
+
+		for (int l = 0; l < _house.handSize(); l++) {
+			countCard(_house.getCardFromHand(l));
+		}
+		for (int l = 0; l < _player.handSize(); l++) {
+			countCard(_player.getCardFromHand(l));
+		}
 		_deck.takeBackCards(_player.returnHand());
 		_deck.takeBackCards(_house.returnHand());
 		_pot = 0;
 	}
 
-	private static void countCard(Card c){
-		if(c.getValue() >= 8 || c.isAce()){
-			_count -= 1;
-		} else if(c.getValue() <= 5){
-			_count += 1;
+	// Uses simple Hi-Lo count
+	private static void countCard(Card c) {
+		if (c.getValue() == 10 || c.isAce()) {
+			_count -= 1.0;
+		} else if (c.getValue() <= 6 && c.getValue() != 2) {
+			_count += 1.0;
 		}
 	}
-	
-	// Simple Strategy where player just asks for cards till over
-	private static void playStrategyOne() {
-		while (_player.getHandValue() <= 12) {
-			_player.hit(_deck.dealCard());
-		}
+
+	// Might come in useful
+	private static boolean playerWonHand() {
+		return (_playerWin > 0);
 	}
-	
-	//house strategy
-	//Is messy but left it like this as it follows my trail of thought will change later
-	private static boolean houseStrategy(boolean hitOnSoft17){
-		
-		boolean stand = false;
-		if(_house.getHandValue()  <= 17){
-			if(_house.hasAce()){
-				if(hitOnSoft17){			
-					if((_house.getHandValueExcludingAce() + 11) <= 17){
+
+	// house strategy soft 17 == (Ace + 6)
+	private static void houseStrategy(boolean hitOnSoft17) {
+
+		int hits = 2;
+		while (_house.getHandValue() < 17 && !_house.hasBlackJack()) {
+			if (_house.hasAce()) {
+				if (hitOnSoft17) {
+					if (_house.getHandValueExcludingAce() <= 6) {
 						_house.hit(_deck.dealCard());
-					} else if(_house.getHandValue() <= 17) {
+						if (DEBUG) {
+							System.out.println("House Hit : "
+									+ _house.getCardFromHand(hits).getValue());
+
+						}
+					} else if ((_house.getHandValueExcludingAce() + 11) > 21
+							&& _house.getHandValue() < 17) {
 						_house.hit(_deck.dealCard());
+						if (DEBUG) {
+							System.out.println("House Hit : "
+									+ _house.getCardFromHand(hits).getValue());
+						}
 					} else {
-						stand = true; 
+						return;
 					}
 				} else {
-					if((_house.getHandValueExcludingAce() + 11) < 17){
+					if (_house.getHandValueExcludingAce() < 6) {
 						_house.hit(_deck.dealCard());
-					} else if(_house.getHandValue() <= 17) {
+						if (DEBUG) {
+							System.out.println("House Hit : "
+									+ _house.getCardFromHand(hits).getValue());
+
+						}
+					} else if ((_house.getHandValueExcludingAce() + 11) > 21
+							&& _house.getHandValue() < 17) {
 						_house.hit(_deck.dealCard());
+						if (DEBUG) {
+							System.out.println("House Hit : "
+									+ _house.getCardFromHand(hits).getValue());
+
+						}
 					} else {
-						stand = true; 
+						return;
 					}
+
 				}
-			} else{
+			} else {
 				_house.hit(_deck.dealCard());
+				if (DEBUG) {
+					System.out.println("House Hit : "
+							+ _house.getCardFromHand(hits).getValue());
+
+				}
+
 			}
-		} else {
-			stand = true;
+			hits++;
 		}
-		return stand;	
 	}
 
-	//Implement Basic Strategy
-	private static boolean basicStrategy() {
+	// PLAYER STRATERGIES
+	// Implement Basic Strategy
+	private static void basicStrategy(boolean hitOnSoft17) {
 
-		Card houseCard = _house.getCardFromHand(0);				
-		boolean stand = false;
-		if(_player.getHandValue() <= 20) {
-			int val = _player.getHandValue();			
-			if (!_player.hasAce()) {				
+		Card houseCard = _house.getCardFromHand(0);
+		int hits = 2;
+		while (_player.getHandValue() <= 20 && !_player.hasBlackJack()) {
+			int val = _player.getHandValue();
+			if (!_player.hasAce()) {
 				switch (val) {
 				case 20:
 				case 19:
 				case 18:
 				case 17:
-					stand = true;
-					break;
+					return;
 				case 16:
 				case 15:
 				case 14:
 				case 13:
-					if(!houseCard.isAce() || houseCard.getValue() <= 7){
-						_player.hit(_deck.dealCard());
+					if (!houseCard.isAce() || houseCard.getValue() <= 7) {
+						return;
 					} else {
-						stand = true;
-					}					
+						_player.hit(_deck.dealCard());
+						if (DEBUG) {
+							System.out.println("Player Hit : "
+									+ _player.getCardFromHand(hits).getValue());
+						}
+					}
 					break;
 				case 12:
-					if(houseCard.getValue() <= 6 && houseCard.getValue() >= 4){
-						stand = true;
+					if (houseCard.getValue() <= 6 && houseCard.getValue() >= 4) {
+						return;
 					} else {
 						_player.hit(_deck.dealCard());
-					}					
+						if (DEBUG) {
+							System.out.println("Player Hit : "
+									+ _player.getCardFromHand(hits).getValue());
+						}
+					}
 					break;
 				default:
 					_player.hit(_deck.dealCard());
+					if (DEBUG) {
+						System.out.println("Player Hit : "
+								+ _player.getCardFromHand(hits).getValue());
+					}
 					break;
-				}				
+				}
 			} else {
 				val = _player.getHandValueExcludingAce();
 				switch (val) {
 				case 2:
 				case 3:
-				case 4: 
+				case 4:
 				case 5:
 				case 6:
 					_player.hit(_deck.dealCard());
 					break;
 				case 7:
-					if(houseCard.getValue() <= 8 && houseCard.getValue() >= 2){
-						stand = true;
-					} else {
+					if (houseCard.getValue() == 9 || houseCard.getValue() == 10
+							|| (hitOnSoft17 && houseCard.isAce())) {
 						_player.hit(_deck.dealCard());
+						if (DEBUG) {
+							System.out.println("Player Hit : "
+									+ _player.getCardFromHand(hits).getValue());
+						}
+					} else {
+						return;
 					}
-					break;					
-				case 8:
-				case 9:
-					_player.hit(_deck.dealCard());
 					break;
 				default:
-					stand = true;
-					break;
+					return;
 				}
 			}
+			hits++;
 		}
-		return stand;
 	}
-	
+
+	private static void testStrategy() {
+
+		int hits = 2;
+		while (_player.getHandValue() < 17 && !_player.hasBlackJack()) {
+			if (_player.hasAce()) {
+				if (_player.getHandValueExcludingAce() < 6) {
+					_player.hit(_deck.dealCard());
+					if (DEBUG) {
+						System.out.println("Player Hit : "
+								+ _player.getCardFromHand(hits).getValue());
+					}
+				} else if ((_player.getHandValueExcludingAce() + 11) > 21
+						&& _player.getHandValue() < 17) {
+					_player.hit(_deck.dealCard());
+					if (DEBUG) {
+						System.out.println("Player Hit : "
+								+ _player.getCardFromHand(hits).getValue());
+					}
+				} else {
+					return;
+				}
+
+			} else {
+				_player.hit(_deck.dealCard());
+				if (DEBUG) {
+					System.out.println("Player Hit : "
+							+ _player.getCardFromHand(hits).getValue());
+
+				}
+			}
+			hits++;
+		}
+
+	}
+
 }

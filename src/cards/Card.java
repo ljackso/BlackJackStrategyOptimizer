@@ -10,17 +10,17 @@ public class Card {
 		NUMBER, JACK, QUEEN, KING, ACE;
 	}	
 	
-	public Card(int value, int suit){
+	public Card(int value, int suit, Type type){
+		_type =type;
 		setValue(value);
 		setSuit(suit);
+		
 	}
 	
 	public void setValue(int value){
 		if(value == 1){
 			_type = Type.ACE;
-		} else {
-			_type = Type.NUMBER;
-		}		
+		} 	
 		_value = value;
 	}
 	
@@ -34,6 +34,10 @@ public class Card {
 	
 	public int getSuit(){
 		return _suit;
+	}
+	
+	public Type getType(){
+		return _type;
 	}
 	
 	public boolean isAce(){

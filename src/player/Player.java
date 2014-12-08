@@ -13,8 +13,8 @@ public class Player {
 	}
 
 	// Adds new card at the end of hand array
-	public void hit(Card c) {
-
+	public void hit(Card c) {	
+		
 		if (_hand[1] != null) {
 
 			Card[] oldHand = _hand;
@@ -47,7 +47,6 @@ public class Player {
 	public int getHandValue() {
 
 		int sum = 0;
-
 		for (int l = 0; l < _hand.length; l++) {
 			sum += _hand[l].getValue();
 		}
@@ -100,6 +99,13 @@ public class Player {
 
 	public Card getCardFromHand(int l) {
 		return _hand[l];
+	}
+	
+	public boolean hasBlackJack(){
+		if(hasAce() && (handSize() == 2) && (getHandValueExcludingAce() == 10)){
+			return true;
+		}
+		return false;
 	}
 	
 	
