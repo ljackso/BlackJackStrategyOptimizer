@@ -34,17 +34,17 @@ public class MainGameLoop {
 		_deck = new Deck(1);
 		_pot = 0;
 
-		double[] countGames = new double[1 + (COUNT_RNG)];
-		double[] countWin = new double[1 + (COUNT_RNG)];
-		double[] countBlackJack = new double[1 + (COUNT_RNG)];
-		double[] countPush = new double[1 + (COUNT_RNG)];
+		double[] countGames = new double[1 + (COUNT_RNG * 2)];
+		double[] countWin = new double[1 + (COUNT_RNG * 2)];
+		double[] countBlackJack = new double[1 + (COUNT_RNG * 2)];
+		double[] countPush = new double[1 + (COUNT_RNG * 2)];
 
 		// Game Loop
 		_deck.shuffle();
-		for (int count = 0; count < (COUNT_RNG + 1); count++) {
-			for (int l = 0; l < 100000; l++) {
-				if(count != 0){
-					_deck.simulateCount(count);				
+		for (int count = 0; count < ((2*COUNT_RNG) + 1); count++) {
+			for (int l = 0; l < 1000000; l++) {
+				if (count != COUNT_RNG) {
+					_deck.simulateCount(count - COUNT_RNG);
 				} else {
 					_deck.shuffle();
 				}
@@ -67,7 +67,7 @@ public class MainGameLoop {
 				endHand();
 
 				int countIndex = count;
-				if (countIndex < (1 + COUNT_RNG) && countIndex > -1) {
+				if (countIndex < (1 + (2*COUNT_RNG)) && countIndex > -1) {
 					countGames[countIndex] += 1;
 					if (playerWonHand()) {
 						if (_playerWin == 0.5) {
@@ -83,17 +83,19 @@ public class MainGameLoop {
 			}
 		}
 
-		double wp, pp, bjp, nl, f;
+		double probWin, probPush, probBlackJack, probNoLose, f;
 		System.out.println("-----------------------------------------");
 		for (int l = 0; l < countGames.length; l++) {
-			int c = l;
-			bjp = countBlackJack[l] / countGames[l];
-			wp = countWin[l] / countGames[l];
-			pp = countPush[l] / countGames[l];
-			nl = bjp + wp + pp;
-			System.out.println(c + " : " + bjp + " : " + wp + " : " + pp
-					+ " : " + nl);
-			f = (1.5 * (bjp + wp) - (1 - nl)) / 1.5;
+			int c = l  - COUNT_RNG;
+			probBlackJack = countBlackJack[l] / countGames[l];
+			probWin = countWin[l] / countGames[l];
+			probPush = countPush[l] / countGames[l];
+			probNoLose = probBlackJack + probWin + probPush;
+			System.out.println(c + " : " + probBlackJack + " : " + probWin
+					+ " : " + probPush + " : " + probNoLose);
+			// This is where we can define our bidding function based on the
+			// stats we have, just using a rough interpretation at the moment
+			f = (1.5 * (probBlackJack + probWin) - (1 - probNoLose)) / 1.5;
 			System.out.println(c + " : " + f);
 		}
 		System.out.println("-----------------------------------------");
@@ -170,9 +172,10 @@ public class MainGameLoop {
 
 	private static void returnCards() {
 
-		for (int l = 0; l < _house.handSize(); l++) {
-			countCard(_house.getCardFromHand(l));
-		}
+//		for (int l = 0; l < _house.handSize(); l++) {
+//			countCard(_house.getCardFromHand(l));
+//		}
+		_house.getCardFromHand(0);
 		for (int l = 0; l < _player.handSize(); l++) {
 			countCard(_player.getCardFromHand(l));
 		}
@@ -185,7 +188,7 @@ public class MainGameLoop {
 	private static void countCard(Card c) {
 		if (c.getValue() == 10 || c.isAce()) {
 			_count -= 1.0;
-		} else if (c.getValue() <= 6 && c.getValue() != 2) {
+		} else if (c.getValue() <= 6 && c.getValue() >= 2) {
 			_count += 1.0;
 		}
 	}

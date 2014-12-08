@@ -119,12 +119,49 @@ public class Deck {
 		shuffle();
 		while (cardsMoved < count) {
 			if (neg) {
-				
-				
+				val = Utility.randInt(0, 4);
+				suit = Utility.randInt(0, 3);
+				Type type;
+
+				switch (val) {
+				case 0:
+					val = 10;
+					type = Type.NUMBER;
+					break;
+				case 1:
+					val = 10;
+					type = Type.JACK;
+					break;
+				case 2:
+					val = 10;
+					type = Type.QUEEN;
+					break;
+				case 3:
+					val = 10;
+					type = Type.KING;
+					break;
+				default:
+					val = 1;
+					type = Type.ACE;
+					break;
+				}
+
+				for (int l = 0; l < _cards.length; l++) {
+					if (_cards[l] != null) {
+						if (_cards[l].getType() == type
+								&& _cards[l].getSuit() == suit
+								&& _cards[l].getValue() == val) {
+							removedCards[cardsMoved] = _cards[l];
+							_cards[l] = null;
+							cardsMoved++;
+							break;
+						}
+					}
+				}
+
 			} else {
 				val = Utility.randInt(2, 6);
 				suit = Utility.randInt(0, 3);
-
 				for (int l = 0; l < _cards.length; l++) {
 					if (_cards[l] != null) {
 						if (_cards[l].getValue() == val
@@ -139,7 +176,6 @@ public class Deck {
 				}
 			}
 		}
-
 		// Squash Array (complete hack)
 		Card[] newCards = new Card[DECK_SIZE * _numDecks];
 		int indexDiff = 0;
