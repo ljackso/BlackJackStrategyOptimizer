@@ -16,7 +16,7 @@ public class TestDeck {
 		Utility.showDeck(d1);
 		System.out.println("---------------------------------------------");
 		
-		d1.simulateCount(-10);
+		d1.simulateCount2(3);
 		Utility.showDeck(d1);
 		System.out.println("---------------------------------------------");
 	}

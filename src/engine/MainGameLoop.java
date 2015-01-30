@@ -34,22 +34,22 @@ public class MainGameLoop {
 		_deck = new Deck(1);
 		_pot = 0;
 
-		double[] countGames = new double[1 + (COUNT_RNG * 2)];
+		double gameCount = 100000;
 		double[] countWin = new double[1 + (COUNT_RNG * 2)];
 		double[] countBlackJack = new double[1 + (COUNT_RNG * 2)];
 		double[] countPush = new double[1 + (COUNT_RNG * 2)];
-		
+
 		// Game Loop
 		_deck.shuffle();
 		for (int count = 0; count < ((2 * COUNT_RNG) + 1); count++) {
-			for (int l = 0; l < 100000; l++) {
-				
+			for (int l = 0; l < gameCount; l++) {
+
 				if (count != COUNT_RNG) {
-					_deck.simulateCount(count - COUNT_RNG);
+					_deck.simulateCount2(count - COUNT_RNG);
 				} else {
 					_deck.shuffle();
 				}
-				
+
 				biddingStrategy();
 				intialHandDeal();
 
@@ -70,29 +70,28 @@ public class MainGameLoop {
 				endHand();
 
 				int countIndex = count;
-				if (countIndex < (1 + (2 * COUNT_RNG)) && countIndex > -1) {
-					countGames[countIndex] += 1;
-					if (playerWonHand()) {
-						if (_playerWin == 0.5) {
-							countPush[countIndex] += 1;
-						} else if (_playerWin == 1) {
-							countWin[countIndex] += 1;
-						} else if (_playerWin == 2) {
-							countBlackJack[countIndex] += 1;
-						}
+
+				if (playerWonHand()) {
+					if (_playerWin == 0.5) {
+						countPush[countIndex] += 1;
+					} else if (_playerWin == 1) {
+						countWin[countIndex] += 1;
+					} else if (_playerWin == 2) {
+						countBlackJack[countIndex] += 1;
 					}
 				}
+
 				returnCards();
 			}
 		}
 
 		double probWin, probPush, probBlackJack, probLose, f, bestF, sum, bestSum;
 		System.out.println("-----------------------------------------");
-		for (int l = 0; l < countGames.length; l++) {
+		for (int l = 0; l < countWin.length; l++) {
 			int c = l - COUNT_RNG;
-			probBlackJack = countBlackJack[l] / countGames[l];
-			probWin = countWin[l] / countGames[l];
-			probPush = countPush[l] / countGames[l];
+			probBlackJack = countBlackJack[l] / gameCount;
+			probWin = countWin[l] / gameCount;
+			probPush = countPush[l] / gameCount;
 			probLose = 1 - (probBlackJack + probWin + probPush);
 
 			// This is where we can define our bidding function based on the
@@ -101,14 +100,13 @@ public class MainGameLoop {
 			sum = 0;
 			bestSum = 0;
 			bestF = 0;
-			while (f < 1) {				
+			while (f < 1) {
 				sum = (probWin * Math.log(1 + f))
-						+ (probBlackJack * Math
-								.log(1 + (2 * f)))
+						+ (probBlackJack * Math.log(1 + (2 * f)))
 						+ (probPush * Math.log(1))
 						+ (probLose * Math.log(1 - f));
 
-				if(sum > bestSum){
+				if (sum > bestSum) {
 					bestSum = sum;
 					bestF = f;
 				}

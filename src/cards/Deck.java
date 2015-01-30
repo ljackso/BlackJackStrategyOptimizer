@@ -99,6 +99,29 @@ public class Deck {
 		}
 	}
 
+	public void simulateCount2(int countWanted){
+		shuffle();		
+		int count = 0;
+		int loops = 0;
+		while(count != countWanted ){
+			Card c = dealCard();
+			if (c.getValue() == 10 || c.isAce()) {
+				count -= 1.0;
+			} else if (c.getValue() <= 6 && c.getValue() >= 2) {
+				count += 1.0;
+			}
+			takeBackCard(c);
+			loops++;
+			if(loops >= 51){
+				shuffle();
+				loops = 0;
+			}
+		}		
+	}
+	
+	
+	
+	
 	public void simulateCount(int count) {
 
 		shuffle();
